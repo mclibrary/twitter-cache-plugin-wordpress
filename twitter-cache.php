@@ -19,7 +19,7 @@ add_action(
 	function plugin_admin_add_page() {
 		add_options_page(
 			'Tweet Cache Settings', 	// Page Title (for display)
-			'Tweet-Cache', 				// Menu TItle
+			'Tweet-Cache', 				// Menu Title
 			'manage_options', 			// Permissions
 			'twtcache', 				// Page name
 			'twtcache_settings_page'	// Page callback (for content)
@@ -28,13 +28,23 @@ add_action(
 
 	/* Settings page Callback */
 	function twtcache_settings_page(){ ?>
-		<div id="wrap">
-			<h1>Tweet Cache Settings</h1>
-			<form>
-
-			</form>
-		</div>
-		<?php
+	    <div class="wrap">  
+	  
+	        <!-- Add the icon to the page -->  
+	        <div id="icon-themes" class="icon32"></div>  
+	        <h2>Tweet-Cache Settings</h2>  
+	  
+	        <!-- Make a call to the WordPress function for rendering errors when settings are saved. -->  
+	        <?php settings_errors(); ?>  
+	  
+	        <!-- Create the form that will be used to render our options -->  
+	        <form method="post" action="options.php">  
+	            <?php settings_fields( 'twtcache_settings' ); ?>  
+	            <?php do_settings_sections( 'twtcache_settings' ); ?>             
+	            <?php submit_button(); ?>  
+	        </form>  
+	    </div><!-- /.wrap -->  
+	<?php  
 		}
 
 /* On admin initialization of the plugin */
@@ -45,9 +55,12 @@ add_action(
 
 	/*Admin Init Callback */
 	function twtcache_admin_init(){
+		if( false == get_option( 'twtcache_settings' ) ) {    
+    		add_option( 'twtcache_settings' );  
+		}
 		add_settings_section(
 			'twtcache_settings', 				// Section ID
-			'Tweet-Cache Settings', 			// Section 'Title' (For display)
+			'Settings', 						// Section 'Title' (For display)
 			'twtcache_settings_callback', 		// Callback function to render the description of the section
 			'twtcache'							// Page on which this section appears
 		);
@@ -68,8 +81,10 @@ add_action(
 			'Username',                         // Field label (for display)  
 	    	'twt_cache_tweet_count_callback',	// Callback to render the html form element 
 			'twtcache',                         // Page on which this field appears
-	    	'twtcache_settings'//,         		// Section in which this field appears  
-    		//array()                           // Array of arguments passed to the callback 
+	    	'twtcache_settings',         		// Section in which this field appears  
+    		array(
+    			'The Twitter user whose fed you wish to display.'
+    		)
     	);
     	/* Cache Length */
     	add_settings_field(   
@@ -77,9 +92,15 @@ add_action(
 			'Username',                         // Field label (for display)  
 	    	'twt_cache_length_callback',   		// Callback to render the html form element 
 			'twtcache',                         // Page on which this field appears
-	    	'twtcache_settings'//,         		// Section in which this field appears  
-    		//array()                           // Array of arguments passed to the callback 
+	    	'twtcache_settings',         		// Section in which this field appears  
+    		array(
+    			'The Twitter user whose fed you wish to display.'
+    		)
     	);
+    	register_setting(  
+    		'twtcache_settings',  
+    		'twtcache_settings'  
+		); 
 	}
 
 	/* Section Callback */
@@ -90,13 +111,18 @@ add_action(
 	/* Field Callbacks */
 		function twt_cache_user_callback($args) {
 		    // Note the ID and the name attribute of the element match that of the ID in the call to add_settings_field  
-		    $html = '<input type="text" id="twt_cache_tweet_count" name="twt_cache_tweet_count" value="' . get_option('twt_cache_tweet_count') . '" />';
-		    $html .= '<label for="twt_cache_tweet_count"> '  . $args[0] . '</label>';   
+		   $options = get_option('twtcache_settings');
+		   echo $options['twt_cache_user'];
 		}
+
 		function twt_cache_tweet_count_callback($args) {
+			$options = get_option('twtcache_settings');
+			echo $options['twt_cache_tweet_count'];
 
 		}
 		function twt_cache_length_callback($args) {
+			$options = get_option('twtcache_settings');
+			echo $options['twt_cache_legth'];
 
 		}
 
