@@ -74,7 +74,7 @@ function twtcache_initialize_plugin_options() {
     add_settings_field(  
         'tweets_to_cache',                      
         'Tweet Count',               
-        'twtcache_toggle_content_callback',   
+        'twtcache_tweet_count_callback',   
         'twtchache_options_page',                     
         'twtchache_settings_section',          
         array(                               
@@ -85,12 +85,29 @@ function twtcache_initialize_plugin_options() {
     add_settings_field(  
         'cache_length',                       
         'Cache Length',                
-        'twtcache_toggle_footer_callback',    
+        'twtcache_cache_length_callback',    
         'twtchache_options_page',         
         'twtchache_settings_section',          
         array(                               
-            'Activate this setting to display the footer.' 
+            'Cache length (in munites).' 
         ) 
+    ); 
+    add_settings_field(  
+        'timestamp',                       
+        'Last Cached',                
+        'twtcache_timestamp_callback',    
+        'twtchache_options_page',         
+        'twtchache_settings_section',          
+        array(                               
+            'Delete this value to clear the cache.' 
+        ) 
+    ); 
+    add_settings_field(  
+        'json-object',                       
+        'Most Recent JSON Object',                
+        'twtcache_json_callback',    
+        'twtchache_options_page',         
+        'twtchache_settings_section'
     ); 
      
     // Finally, we register the fields with WordPress 
@@ -116,7 +133,7 @@ function twtcache_user_id_callback($args) {
     echo $html;
 } // end twtcache_user_id_callback 
  
-function twtcache_toggle_content_callback($args) { 
+function twtcache_tweet_count_callback($args) { 
  
     $options = get_option('twtchache_options_section'); 
      
@@ -125,9 +142,9 @@ function twtcache_toggle_content_callback($args) {
      
     echo $html; 
      
-} // end twtcache_toggle_content_callback 
+} // end twtcache_tweet_count_callback 
  
-function twtcache_toggle_footer_callback($args) { 
+function twtcache_cache_length_callback($args) { 
      
     $options = get_option('twtchache_options_section'); 
      
@@ -136,6 +153,31 @@ function twtcache_toggle_footer_callback($args) {
       
     echo $html;  
       
-} // end twtcache_toggle_footer_callback  
+} // end twtcache_cache_length_callback  
 
+function twtcache_timestamp_callback($args) { 
+     
+    $options = get_option('twtchache_options_section'); 
+    if (!$options['timestamp']){
+        $html = '<code>Never</code>';   
+    } else {
+    $html = '<code>' . $options['timestamp'] . '</code>';
+    }
+      
+    echo $html;  
+      
+} // end twtcache_timestamp_callback
+
+function twtcache_json_callback($args) { 
+     
+    $options = get_option('twtchache_options_section'); 
+    if (!$options['json']){
+        $html = '<code>No object cached.</code>';   
+    } else {
+    $html = '<code>' . $options['json'] . '</code>';
+    }
+      
+    echo $html;  
+      
+} // end twtcache_json_callback
 ?>
