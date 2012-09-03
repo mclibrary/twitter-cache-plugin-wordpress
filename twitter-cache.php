@@ -31,7 +31,7 @@ function twtchache_plugin_display_callback() {
     <div class="wrap"> 
      
         <div id="icon-themes" class="icon32"></div> 
-        <h2>Sandbox Theme Options</h2> 
+        <h2>Tweet-Cache</h2> 
         <?php settings_errors(); ?> 
          
         <form method="post" action="options.php"> 
@@ -47,8 +47,8 @@ function twtchache_plugin_display_callback() {
 function twtcache_initialize_plugin_options() { 
  
     // If the theme options don't exist, create them.  
-    if( false == get_option( 'twtchache_options_section' ) ) {    
-        add_option( 'twtchache_options_section' );  
+    if( false == get_option( 'twtcache_options_section' ) ) {    
+        add_option( 'twtcache_options_section' );  
     } // end if  
   
     // First, we register a section. This is necessary since all future options must belong to a   
@@ -89,7 +89,7 @@ function twtcache_initialize_plugin_options() {
         'twtchache_options_page',         
         'twtchache_settings_section',          
         array(                               
-            'Cache length (in munites).' 
+            'Cache length (in minutes).' 
         ) 
     ); 
     add_settings_field(  
@@ -113,9 +113,10 @@ function twtcache_initialize_plugin_options() {
     // Finally, we register the fields with WordPress 
     register_setting( 
         'twtchache_options_page', 
-        'twtchache_options_section' 
+        'twtcache_options_section' 
     ); 
-     
+
+
 } // end twtcache_initialize_plugin_options 
 add_action('admin_init', 'twtcache_initialize_plugin_options'); 
  
@@ -125,9 +126,9 @@ function twtchache_options_callback() {
  
 function twtcache_user_id_callback($args) { 
    
-    $options = get_option('twtchache_options_section', null); 
+    $options = get_option('twtcache_options_section', null); 
      
-    $html = '<input type="text" id="user_id" name="twtchache_options_section[user_id]" value="' . $options['user_id'] . '" />';  
+    $html = '<input type="text" id="user_id" name="twtcache_options_section[user_id]" value="' . $options['user_id'] . '" />';  
     $html .= '<label for="user_id"> '  . $args[0] . '</label>';   
      
     echo $html;
@@ -135,9 +136,9 @@ function twtcache_user_id_callback($args) {
  
 function twtcache_tweet_count_callback($args) { 
  
-    $options = get_option('twtchache_options_section'); 
+    $options = get_option('twtcache_options_section'); 
      
-    $html = '<input type="text" id="tweets_to_cache" name="twtchache_options_section[tweets_to_cache]" value="' . $options['tweets_to_cache'] . '" />';  
+    $html = '<input type="text" id="tweets_to_cache" name="twtcache_options_section[tweets_to_cache]" value="' . $options['tweets_to_cache'] . '" />';  
     $html .= '<label for="tweets_to_cache"> '  . $args[0] . '</label>';  
      
     echo $html; 
@@ -146,9 +147,9 @@ function twtcache_tweet_count_callback($args) {
  
 function twtcache_cache_length_callback($args) { 
      
-    $options = get_option('twtchache_options_section'); 
+    $options = get_option('twtcache_options_section'); 
      
-    $html = '<input type="text" id="cache_length" name="twtchache_options_section[cache_length]" value="' . $options['cache_length'] . '" />';  
+    $html = '<input type="text" id="cache_length" name="twtcache_options_section[cache_length]" value="' . $options['cache_length'] . '" />';  
     $html .= '<label for="cache_length"> '  . $args[0] . '</label>';   
       
     echo $html;  
@@ -157,11 +158,12 @@ function twtcache_cache_length_callback($args) {
 
 function twtcache_timestamp_callback($args) { 
      
-    $options = get_option('twtchache_options_section'); 
+    $options = get_option('twtcache_options_section');
     if (!$options['timestamp']){
         $html = '<code>Never</code>';   
     } else {
-    $html = '<code>' . $options['timestamp'] . '</code>';
+    $html = '<code>' . date('j M Y g:i A e', $options['timestamp']) . '</code>';
+    $html .= '<input type="hidden" id="timestamp" name="twtcache_options_section[timestamp]" value="' . $options['timestamp'] . '" />';
     }
       
     echo $html;  
@@ -170,14 +172,34 @@ function twtcache_timestamp_callback($args) {
 
 function twtcache_json_callback($args) { 
      
-    $options = get_option('twtchache_options_section'); 
+    $options = get_option('twtcache_options_section'); 
     if (!$options['json']){
         $html = '<code>No object cached.</code>';   
     } else {
-    $html = '<code>' . $options['json'] . '</code>';
+    $html = '<code>' . urldecode($options['json']) . '</code>';
+    $html .= '<input type="hidden" id="json" name="twtcache_options_section[json]" value="' . $options['json'] . '" />';
     }
       
     echo $html;  
-      
+    
 } // end twtcache_json_callback
+
+
+function update_twtcache(){
+    $options = get_option('twtcache_options_section');
+    
+    if (($options['timestamp'] + 60 * $options['cache_length']) < time()){
+
+        $jsonurl = "http://api.twitter.com/1/statuses/user_timeline/" . $options['user_id'] . ".json?count=" . $options['tweets_to_cache'];
+        $json = file_get_contents($jsonurl,0,null,null);
+        $options['timestamp'] = time();
+        $options['json'] = urlencode($json);
+        update_option('twtcache_options_section', $options );
+
+    } 
+}
+
+add_action('wp_head', 'update_twtcache');
+
+
 ?>
