@@ -162,7 +162,7 @@ function twtcache_timestamp_callback($args) {
     if (!$options['timestamp']){
         $html = '<code>Never</code>';   
     } else {
-    $html = '<code>' . date('j M Y g:i A e', $options['timestamp']) . '</code>';
+    $html = '<code>' . date('j M Y g:i:s A e', $options['timestamp']) . '</code>';
     $html .= '<input type="hidden" id="timestamp" name="twtcache_options_section[timestamp]" value="' . $options['timestamp'] . '" />';
     }
       
@@ -188,15 +188,17 @@ function twtcache_json_callback($args) {
 function update_twtcache(){
     $options = get_option('twtcache_options_section');
     
-    if (($options['timestamp'] + 60 * $options['cache_length']) < time()){
+    if (($options['timestamp'] + 60 * $options['cache_length']) < time()){ 
 
         $jsonurl = "http://api.twitter.com/1/statuses/user_timeline/" . $options['user_id'] . ".json?count=" . $options['tweets_to_cache'];
         $json = file_get_contents($jsonurl,0,null,null);
-        $options['timestamp'] = time();
-        $options['json'] = urlencode($json);
-        update_option('twtcache_options_section', $options );
-
-    } 
+        
+        if ($json) {
+            $options['timestamp'] = time();
+            $options['json'] = urlencode($json);
+            update_option('twtcache_options_section', $options );
+        }
+    }
 }
 
 add_action('wp_head', 'update_twtcache');
