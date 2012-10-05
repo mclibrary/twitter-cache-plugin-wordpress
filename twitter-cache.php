@@ -190,7 +190,7 @@ function update_twtcache(){
     
     if (($options['timestamp'] + 60 * $options['cache_length']) < time()){ 
 
-        $jsonurl = "https://api.twitter.com/1/statuses/user_timeline.json?include_entities=true&include_rts=true&screen_name=" . $options['user_id']; "&count=2";
+        $jsonurl = "https://api.twitter.com/1/statuses/user_timeline.json?include_entities=true&include_rts=true&screen_name=" . $options['user_id'];
             if ($options['tweets_to_cache'] != null){
                 $jsonurl .= "&count=" . $options['tweets_to_cache'];
             } else {
