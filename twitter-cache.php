@@ -190,7 +190,14 @@ function update_twtcache(){
     
     if (($options['timestamp'] + 60 * $options['cache_length']) < time()){ 
 
-        $jsonurl = "http://api.twitter.com/1/statuses/user_timeline/" . $options['user_id'] . ".json?count=" . $options['tweets_to_cache'];
+        $jsonurl = "https://api.twitter.com/1/statuses/user_timeline.json?include_entities=true&include_rts=true&screen_name=" . $options['user_id']; "&count=2";
+            if ($options['tweets_to_cache'] != null){
+                $jsonurl .= "&count=" . $options['tweets_to_cache'];
+            } else {
+		$jsonurl .= "&count=3";
+		}
+        
+
         $json = file_get_contents($jsonurl,0,null,null);
         
         if ($json) {
@@ -202,6 +209,45 @@ function update_twtcache(){
 }
 
 add_action('wp_head', 'update_twtcache');
+function twtcache() {
+    do_action('twtcache');
+}
 
+function linkify($text){
+    //http and https links
+    $text = preg_replace(
+    '@(https?://([-\w\.]+)+(/([\w/_\.]*(\?\S+)?(#\S+)?)?)?)@',
+     '<a href="$1">$1</a>',
+    $text);
+
+    //@ mentions
+    $text = preg_replace(
+        '/@(\w+)/',
+        '<a href="http://twitter.com/$1">@$1</a>',
+        $text);
+
+    // Hashtags
+    $text = preg_replace(
+    '/\s+#(\w+)/',
+    ' <a href="http://search.twitter.com/search?q=%23$1">#$1</a>',
+    $text);
+
+    return $text;
+}
+
+function display_tweets(){
+    $options = get_option('twtcache_options_section', null);
+    $json = urldecode($options['json']);
+    $json_obj = json_decode($json);
+    
+    foreach ($json_obj as $array) {
+        $date_iso = date('c', strtotime($array->created_at));
+        $date_str = date('j M Y', strtotime($array->created_at));
+        echo '<div class="tweet"><div class="tweet-text">' . linkify($array->text) . '</div><div class="tweet-foot"><a href="https://twitter.com/MilliganLibrary/status/' . $array->id_str . '" class="timestamp" title="' . $date_iso . ' ">' . $date_str . '</a> | <a href="http://twitter.com/intent/tweet?in_reply_to=' . $array->id_str . '">reply</a> | <a href="http://twitter.com/intent/retweet?tweet_id=' . $array->id_str . '">retweet</a> | <a href="http://twitter.com/intent/favorite?tweet_id=' . $array->id_str . '">favorite</a></div></div>';
+
+    }
+
+}
+add_action('twtcache', 'display_tweets');
 
 ?>
