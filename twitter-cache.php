@@ -3,9 +3,9 @@
 Plugin Name: Twitter Cache
 Description: A Hard-coded solution to cache our twitter feed so we don't get rate-limited
 Version: 20120830
-Plugin URI: http://library.milliagn.edu/
+Plugin URI: https://github.com/jackweinbender/tweet-cache-wordpress
 Author: Jack Weinbender
-Author URI: http://library.milligan.edu/
+Author URI: https://github.com/jackweinbender/
 */
 
 
