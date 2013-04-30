@@ -1,185 +1,238 @@
 <?php
 
+
 class TwitterCacheSettings {
 
+    /* Class variables to be used throughout */
+    private $pluginOptionName = 'twitter_cache_plugin_settings';
+    private $pluginSettingsPage = 'twitter_cache_settings_page';
+
+    /* This is the main settings variable */
+    private $settings;
+
+	/* Constructor */
 	public function __construct(){
+        /* Retrieve plugin option, returns false if not set */
+        $this->settings     = get_option( $this->pluginOptionName );
 		
+        /* If the option hasn't been set */
+        if( $this->settings == false ) {
+            
+            /* Add the option to DB */
+            add_option( $this->pluginOptionName );
+            
+            /* Set defaults */
+            $this->settings = array(
+                'user_id'           => 'twitter',
+                'tweets_to_cache'   => '3',
+                'cache_length'      => '5',
+                'timestamp'         => 0
+            );
 
-		add_action('admin_init', 'initialize_plugin_settings'); 
-		add_action( 'admin_menu', 'initialize_settings_page' ); 
+            /* Save defaults to DB */
+            $this->saveSettings();
+
+        }
+
+        /* Add actions to admin area */
+        if (is_admin()){
+            add_action( 'admin_init', array($this, 'initialize_plugin_settings' )); 
+            add_action( 'admin_menu', array($this, 'initialize_settings_page' )); 
+        }
 	}
 
-	function initialize_settings_page() {  
-	  
-	    add_options_page(  
-	        'Tweet Cache',            // The title to be displayed in the browser window for this page.  
-	        'Tweet Cache',            // The text to be displayed for this menu item  
-	        'administrator',            // Which type of users can see this menu item  
-	        'twitter-cache-plugin-settings',    // The unique ID - that is, the slug - for this menu item  
-	        array($this, 'display_settings_page_callback'),
-	    );  
-	}
+    /* Registers all setting sections and setting fields */
+    public function initialize_plugin_settings() { 
+     
+        // If the theme options don't exist, create them.  
+        if( false == get_option( 'twitter_cache_plugin_settings' ) ) {    
+            add_option( 'twitter_cache_plugin_settings' );  
+        } // end if  
+      
+        /* Add a settings section */
+        add_settings_section(  
+            'twitter_cache_settings_section',
+            'User Info',               
+            array($this, 'settings_section_callback'),
+            $this->pluginSettingsPage     
+        );  
+          
+            /* Add all the settings fields */
+            add_settings_field(
+                'user_id',
+                'User ID',
+                array($this, 'setting_user_id_callback'),
+                $this->pluginSettingsPage,
+                'twitter_cache_settings_section',
+                array(
+                    'Your Twitter Username' 
+                ) 
+            ); 
+             
+            add_settings_field(  
+                'tweets_to_cache',                      
+                'Tweet Count',               
+                array($this, 'setting_tweet_count_callback'),   
+                $this->pluginSettingsPage,                    
+                'twitter_cache_settings_section',          
+                array(                               
+                    'Number of tweets you wish to cache.' 
+                ) 
+            ); 
+             
+            add_settings_field(  
+                'cache_length',                       
+                'Cache Length',                
+                array($this, 'setting_cache_length_callback'),    
+                $this->pluginSettingsPage,         
+                'twitter_cache_settings_section',          
+                array(                               
+                    'Cache length (in minutes).' 
+                ) 
+            );
 
+        /* Add a settings section */
+        add_settings_section(  
+            'twitter_cache_cache_section',
+            'Cache Info',               
+            array($this, 'cache_section_callback'),
+            $this->pluginSettingsPage  
+        ); 
+
+            add_settings_field(  
+                'timestamp',                       
+                'Last Cached',                
+                array($this, 'setting_timestamp_callback'),    
+                $this->pluginSettingsPage,        
+                'twitter_cache_cache_section',          
+                array(                               
+                    'Delete this value to clear the cache.' 
+                ) 
+            ); 
+            add_settings_field(  
+                'json_object',                       
+                'Tweets Cached',                
+                array($this, 'setting_json_callback'),    
+                $this->pluginSettingsPage,        
+                'twitter_cache_cache_section'
+            ); 
+         
+        /* Register Settings */
+        register_setting( 
+            $this->pluginSettingsPage,
+            $this->pluginOptionName 
+        ); 
+    }
+
+    /* Settings section callbacks (Empty) */
+	public function settings_section_callback(){}
+    public function cache_settings_callback(){}
+
+
+    /* Setting field callbacks */
+    public function setting_user_id_callback($args) { 
+         
+        $html = '<input type="text" id="user_id" name="twitter_cache_plugin_settings[user_id]" value="' . $this->settings['user_id'] . '" />';  
+        $html .= '<label for="user_id"> '  . $args[0] . '</label>';   
+         
+        echo $html;
+    }
  
-	/* Callback function for displaying the settigs page */
-	function display_settings_page_callback() { 
-		?> 
-		    <!-- Create a header in the default WordPress 'wrap' container --> 
-		    <div class="wrap"> 
-		     
-		        <div id="icon-themes" class="icon32"></div> 
-		        <h2>Tweet-Cache</h2> 
-		        <?php settings_errors(); ?> 
-		         
-		        <form method="post" action="options.php"> 
-		            <?php settings_fields( 'twitter_cache_options_page' ); ?> 
-		            <?php do_settings_sections( 'twitter_cache_options_page' ); ?>          
-		            <?php submit_button(); ?> 
-		        </form> 
-		         
-		    </div><!-- /.wrap --> 
-		<?php 
-	}
+    public function setting_tweet_count_callback($args) { 
+         
+        $html = '<input type="text" id="tweets_to_cache" name="twitter_cache_plugin_settings[tweets_to_cache]" value="' . $this->settings['tweets_to_cache'] . '" />';  
+        $html .= '<label for="tweets_to_cache"> '  . $args[0] . '</label>';  
+         
+        echo $html; 
+    }
  
-	function initialize_plugin_settings() { 
-	 
-	    // If the theme options don't exist, create them.  
-	    if( false == get_option( 'twitter_cache_plugin_settings' ) ) {    
-	        add_option( 'twitter_cache_plugin_settings' );  
-	    } // end if  
-	  
-	    /* Add a settings section */
-	    add_settings_section(  
-	        'twitter_cache_settings_section',
-	        'Display Options',               
-	        array($this, 'settings_section_callback'),
-	        'twitter_cache_options_page'     
-	    );  
-	      
-	    /* Add all the settings fields */
-	    add_settings_field(
-	        'user_id',
-	        'User ID',
-	        array($this, 'setting_user_id_callback'),
-	        'twitter_cache_options_page',
-	        'twitter_cache_settings_section',
-	        array(
-	            'Your Twitter Username' 
-	        ) 
-	    ); 
-	     
-	    add_settings_field(  
-	        'tweets_to_cache',                      
-	        'Tweet Count',               
-	        array($this, 'setting_tweet_count_callback'),   
-	        'twitter_cache_options_page',                     
-	        'twitter_cache_settings_section',          
-	        array(                               
-	            'Number of tweets you wish to cache.' 
-	        ) 
-	    ); 
-	     
-	    add_settings_field(  
-	        'cache_length',                       
-	        'Cache Length',                
-	        array($this, 'setting_cache_length_callback'),    
-	        'twitter_cache_options_page',         
-	        'twitter_cache_settings_section',          
-	        array(                               
-	            'Cache length (in minutes).' 
-	        ) 
-	    ); 
-	    add_settings_field(  
-	        'timestamp',                       
-	        'Last Cached',                
-	        array($this, 'setting_timestamp_callback'),    
-	        'twitter_cache_options_page',         
-	        'twitter_cache_settings_section',          
-	        array(                               
-	            'Delete this value to clear the cache.' 
-	        ) 
-	    ); 
-	    add_settings_field(  
-	        'json-object',                       
-	        'Most Recent JSON Object',                
-	        array($this, 'setting_json_callback'),    
-	        'twitter_cache_options_page',         
-	        'twitter_cache_settings_section'
-	    ); 
-	     
-	    /* Register Settings */
-	    register_setting( 
-	        'twitter_cache_options_page', 
-	        'twitter_cache_plugin_settings' 
-	    ); 
-	}
+    public function setting_cache_length_callback($args) { 
+         
+        $html = '<input type="text" id="cache_length" name="twitter_cache_plugin_settings[cache_length]" value="' . $this->settings['cache_length'] . '" />';  
+        $html .= '<label for="cache_length"> '  . $args[0] . '</label>';   
+          
+        echo $html;  
+    }  
 
- 
+    public function setting_timestamp_callback($args) { 
+        if (!$this->settings['timestamp']){
+            $html = '<code>NA</code>';
+        } else {
+            $html = '<code>' . date('j M Y g:i:s A', $this->settings['timestamp']) . '</code>';
+        }
+        echo $html;
+    }
 
-	/* Settings callback functions */
+    public function setting_json_callback($args) {
+        if (!$this->settings['json_object']){
+            $html = '<code>No object cached. Make sure Username is correct.</code>';
+        } else {
+            $jsonObj = json_decode(urldecode($this->settings['json_object']));
 
-	function settings_section_callback() { 
-	    echo '<p>Settings for Twitter Cache Plugin</p>'; 
-	}
- 
-	function setting_user_id_callback($args) { 
-	   
-	    $options = get_option('twitter_cache_plugin_settings', null); 
-	     
-	    $html = '<input type="text" id="user_id" name="twitter_cache_plugin_settings[user_id]" value="' . $options['user_id'] . '" />';  
-	    $html .= '<label for="user_id"> '  . $args[0] . '</label>';   
-	     
-	    echo $html;
-	}
- 
-	function setting_tweet_count_callback($args) { 
-	 
-	    $options = get_option('twitter_cache_plugin_settings'); 
-	     
-	    $html = '<input type="text" id="tweets_to_cache" name="twitter_cache_plugin_settings[tweets_to_cache]" value="' . $options['tweets_to_cache'] . '" />';  
-	    $html .= '<label for="tweets_to_cache"> '  . $args[0] . '</label>';  
-	     
-	    echo $html; 
-	     
-	}
- 
-	function setting_cache_length_callback($args) { 
-	     
-	    $options = get_option('twitter_cache_plugin_settings'); 
-	     
-	    $html = '<input type="text" id="cache_length" name="twitter_cache_plugin_settings[cache_length]" value="' . $options['cache_length'] . '" />';  
-	    $html .= '<label for="cache_length"> '  . $args[0] . '</label>';   
-	      
-	    echo $html;  
-	      
-	}  
+            foreach ($jsonObj as $tweet) {
+                echo '<p>' . $tweet->text . '</p>';
+            }
+        }
+        //echo $html;
+    }
 
-	function setting_timestamp_callback($args) { 
-	     
-	    $options = get_option('twitter_cache_plugin_settings');
-	    if (!$options['timestamp']){
-	        $html = '<code>Never</code>';   
-	    } else {
-	    $html = '<code>' . date('j M Y g:i:s A e', $options['timestamp']) . '</code>';
-	    $html .= '<input type="hidden" id="timestamp" name="twitter_cache_plugin_settings[timestamp]" value="' . $options['timestamp'] . '" />';
-	    }
-	      
-	    echo $html;  
-	      
-	}
 
-	function setting_json_callback($args) { 
-	     
-	    $options = get_option('twitter_cache_plugin_settings'); 
-	    if (!$options['json']){
-	        $html = '<code>No object cached.</code>';   
-	    } else {
-	    $html = '<code>' . urldecode($options['json']) . '</code>';
-	    $html .= '<input type="hidden" id="json" name="twitter_cache_plugin_settings[json]" value="' . $options['json'] . '" />';
-	    }
-	      
-	    echo $html;  
-	    
-	}
+    /* Saves current settings to DB */
+    public function saveSettings(){
 
+        update_option($this->pluginOptionName, $this->settings);
+    }
+
+    /* Updates settings from DB */
+    public function fetchSettings(){
+        $this->settings = get_option( $this->pluginOptionName );
+    }
+
+    /* Update and saves a setting */
+    public function updateSetting($setting, $value){
+
+        /* Reassign setting to new value*/
+        $this->settings[$setting] = $value;
+
+        /* Update database */
+        update_option($this->pluginOptionName, $this->settings);
+    }
+
+    /* Returns all settings as array */
+    public function getSettings(){
+        return $this->settings;
+    }
+
+    /* Create Settings Page */
+	public function initialize_settings_page() {  
+        add_options_page(  
+            'Tweet Cache',
+            'Tweet Cache',
+            'administrator',
+            'twitter-cache-plugin-settings',
+            array($this, 'display_settings_page_callback')
+        );  
+    }
+
+    /* Callback function for displaying the settigs page */
+    public function display_settings_page_callback() { 
+        ?> 
+            <!-- Create a header in the default WordPress 'wrap' container --> 
+            <div class="wrap"> 
+             
+                <div id="icon-themes" class="icon32"></div> 
+                <h2>Twitter Cache</h2> 
+                <?php //settings_errors(); ?> 
+                 
+                <form method="post" action="options.php"> 
+                    <?php settings_fields( $this->pluginSettingsPage ); ?> 
+                    <?php do_settings_sections( $this->pluginSettingsPage ); ?>          
+                    <?php submit_button(); ?> 
+                </form> 
+                 
+            </div><!-- /.wrap --> 
+        <?php 
+    }
 }
+
+?>
