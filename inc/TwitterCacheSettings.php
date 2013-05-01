@@ -1,7 +1,7 @@
 <?php
 
 
-class TwitterCacheSettings {
+class TwitterCacheSettings extends TwitterPlugin {
 
     /* Class variables to be used throughout */
     private $pluginOptionName = 'twitter_cache_plugin_settings';
@@ -168,12 +168,18 @@ class TwitterCacheSettings {
             $html = '<code>No object cached. Make sure Username is correct.</code>';
         } else {
             $jsonObj = json_decode(urldecode($this->settings['json_object']));
-
+            
+            $html  = "<table class='widefat wp-list-table'>\n";
+            $html .= "<thead>\n<tr>\n";
+            $html .= "<th>Tweets</th>\n</tr>\n</thead>\n<tbody>\n";
+            
             foreach ($jsonObj as $tweet) {
-                echo '<p>' . $tweet->text . '</p>';
+                $html .= "<tr>\n";
+                $html .= '<td>' . $this->linkify($tweet->text) . '</td></tr>';
             }
+            $html .= '</table>';
         }
-        //echo $html;
+        echo $html;
     }
 
 

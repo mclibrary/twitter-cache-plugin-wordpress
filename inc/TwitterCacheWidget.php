@@ -1,9 +1,10 @@
 <?php
 
-class TwitterCacheWidget{
+class TwitterCacheWidget extends TwitterPlugin {
 
     private $sObj;
     private $settings;
+    private $time;
 
     public function __construct(TwitterCacheSettings $settingsObject){
 
@@ -13,15 +14,30 @@ class TwitterCacheWidget{
         add_action('twtcache', array($this, 'display_tweets'));
         add_action('wp_head', array($this, 'update_twtcache'));
 
+        $this->update_twtcache();
+
+    }
+
+    /* Check if cache has expired */
+    public function isCacheExpired(){
+
+        $this->time = (int) current_time('timestamp', 0);
+
+        if ( $this->settings['timestamp'] + $this->settings['cache_length'] * 60 < $this->time ){
+            return true;
+        } else {
+            return false;
+        }
+
     }
 
     public function twtcache() {
-        do_action(array($this,'twtcache'));
+        do_action('twtcache');
     }
 
     public function update_twtcache(){
 
-        if (true){ 
+        if ($this->isCacheExpired()){ 
 
             $jsonurl  = "https://api.twitter.com/1/statuses/user_timeline.json?include_entities=true&include_rts=true&screen_name=";
             $jsonurl .= $this->settings['user_id'];
@@ -30,7 +46,7 @@ class TwitterCacheWidget{
             $json = file_get_contents($jsonurl,0,null,null);
 
             if ($json) {
-                $this->settings['timestamp'] = time();
+                $this->settings['timestamp'] = $this->time;
                 $this->settings['json_object'] = urlencode($json);
 
                 $this->sObj->updateSetting('timestamp', $this->settings['timestamp']);
@@ -39,36 +55,30 @@ class TwitterCacheWidget{
         }
     }
 
-    public function linkify($text){
-        //http and https links
-        $text = preg_replace(
-        '@(https?://([-\w\.]+)+(/([\w/_\.]*(\?\S+)?(#\S+)?)?)?)@',
-         '<a href="$1">$1</a>',
-        $text);
-
-        //@ mentions
-        $text = preg_replace(
-            '/@(\w+)/',
-            '<a href="http://twitter.com/$1">@$1</a>',
-            $text);
-
-        // Hashtags
-        $text = preg_replace(
-        '/\s+#(\w+)/',
-        ' <a href="http://search.twitter.com/search?q=%23$1">#$1</a>',
-        $text);
-
-        return $text;
-    }
-
     public function display_tweets(){
         $json = urldecode($this->settings['json_object']);
         $json_obj = json_decode($json);
         
-        foreach ($json_obj as $array) {
-            $date_iso = date('c', strtotime($array->created_at));
-            $date_str = date('j M Y', strtotime($array->created_at));
-            echo '<div class="tweet"><div class="tweet-text">' . linkify($array->text) . '</div><div class="tweet-foot"><a href="https://twitter.com/MilliganLibrary/status/' . $array->id_str . '" class="timestamp" title="' . $date_iso . ' ">' . $date_str . '</a> | <a href="http://twitter.com/intent/tweet?in_reply_to=' . $array->id_str . '">reply</a> | <a href="http://twitter.com/intent/retweet?tweet_id=' . $array->id_str . '">retweet</a> | <a href="http://twitter.com/intent/favorite?tweet_id=' . $array->id_str . '">favorite</a></div></div>';
+        foreach ($json_obj as $tweet) {
+            $date_iso = date('c', strtotime($tweet->created_at));
+            $date_str = date('j M Y', strtotime($tweet->created_at));
+            
+            $html = '<div class="tweet">';
+                $html .= '<div class="tweet-text">' . $this->linkify($tweet->text) . '</div>';
+                $html .= '<div class="tweet-foot">';
+                    $html .= '<a href="https://twitter.com/MilliganLibrary/status/';
+                        $html .= $tweet->id_str . '"';
+                        $html .= 'class="timestamp" title="' . $date_iso . ' ">' . $date_str . '</a>';
+                    $html .= ' | ';
+                    $html .= '<a href="http://twitter.com/intent/tweet?in_reply_to=' . $tweet->id_str . '">reply</a>';
+                    $html .= ' | ';
+                    $html .= '<a href="http://twitter.com/intent/retweet?tweet_id=' . $tweet->id_str . '">retweet</a>';
+                    $html .= ' | ';
+                    $html .= '<a href="http://twitter.com/intent/favorite?tweet_id=' . $tweet->id_str . '">favorite</a>';
+                $html .= '</div>';
+            $html .= '</div>';
+            
+            echo $html;
         }
     }
 }
