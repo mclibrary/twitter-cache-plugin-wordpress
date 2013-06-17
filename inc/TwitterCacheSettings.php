@@ -212,8 +212,8 @@ class TwitterCacheSettings extends TwitterPlugin {
     /* Create Settings Page */
 	public function initialize_settings_page() {  
         add_options_page(  
-            'Tweet Cache',
-            'Tweet Cache',
+            'Twitter Cache',
+            'Twitter Cache',
             'administrator',
             'twitter-cache-plugin-settings',
             array($this, 'display_settings_page_callback')
