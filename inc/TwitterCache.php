@@ -1,61 +1,66 @@
 <?php
 
-class TwitterCacheWidget extends TwitterPlugin {
+class TwitterCache extends TwitterPlugin {
 
-    private $sObj;
-    private $settings;
     private $time;
 
-    public function __construct(TwitterCacheSettings $settingsObject){
+    public function __construct(){
 
-        $this->sObj = $settingsObject;
-        $this->settings = $settingsObject->getSettings();
+        parent::__construct();
 
         add_action('twtcache', array($this, 'display_tweets'));
-        add_action('wp_head', array($this, 'update_twtcache'));
-
-        $this->update_twtcache();
+        
+        $this->update_cache();
 
     }
 
     /* Check if cache has expired */
     public function isCacheExpired(){
-
         $this->time = (int) current_time('timestamp', 0);
-
-        if ( $this->settings['timestamp'] + $this->settings['cache_length'] * 60 < $this->time ){
+        if ( $this->settings['timestamp'] == NULL ) {
+            //echo "NULL\n";
             return true;
         } else {
-            return false;
+            if ( $this->settings['timestamp'] + $this->settings['cache_length'] * 60 < $this->time ){
+                //echo "Expired\n";
+                return true;
+            } else {
+                //echo "Fresh\n";
+                return false;
+            }
         }
-
     }
 
     public function twtcache() {
         do_action('twtcache');
     }
 
-    public function update_twtcache(){
+    public function update_cache(){
+        if ($this->isCacheExpired()){
 
-        if ($this->isCacheExpired()){ 
+            $jsonurl  = "https://api.twitter.com/1.1/statuses/user_timeline.json?include_entities=true&include_rts=true&screen_name=";
+                $jsonurl .= $this->settings['user_id'];
+                $jsonurl .= "&count=" . $this->settings['tweets_to_cache'];
 
-            $jsonurl  = "https://api.twitter.com/1/statuses/user_timeline.json?include_entities=true&include_rts=true&screen_name=";
-            $jsonurl .= $this->settings['user_id'];
-            $jsonurl .= "&count=" . $this->settings['tweets_to_cache'];
+            $opts = array (
+                'http'=>array (
+                    'method'=>"GET",
+                    'header'=>"Authorization: Bearer " . $this->settings['bearer_token'] . "\r\n"
+                    )
+                );
+            $context = stream_context_create($opts);
             
-            $json = file_get_contents($jsonurl,0,null,null);
+            $json = file_get_contents($jsonurl,false,$context,null);
 
             if ($json) {
-                $this->settings['timestamp'] = $this->time;
-                $this->settings['json_object'] = urlencode($json);
-
-                $this->sObj->updateSetting('timestamp', $this->settings['timestamp']);
-                $this->sObj->updateSetting('json_object', $this->settings['json_object']);
+                $this->updateSetting('timestamp', $this->time);
+                $this->updateSetting('json_object', urlencode($json));
             }
         }
     }
 
     public function display_tweets(){
+
         $json = urldecode($this->settings['json_object']);
         $json_obj = json_decode($json);
         
@@ -81,6 +86,5 @@ class TwitterCacheWidget extends TwitterPlugin {
             echo $html;
         }
     }
-}
 
-?>
+}
