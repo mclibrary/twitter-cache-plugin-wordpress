@@ -89,7 +89,9 @@ class TwitterAuth extends TwitterPlugin {
 			curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 			curl_setopt($ch, CURLOPT_POST, 1);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
+        	curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        	curl_setopt($ch, CURLOPT_CAINFO, __DIR__ . '/cacert.pem');
 			curl_setopt($ch, CURLOPT_POSTFIELDS, "grant_type=client_credentials");
 		$header = curl_setopt($ch, CURLOPT_HEADER, 1);
 		$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
