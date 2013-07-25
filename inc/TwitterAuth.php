@@ -10,8 +10,8 @@ class TwitterAuth extends TwitterPlugin {
 		$this->oauth = array (
 	        'access_token'          => 'Jack',
 	        'access_token_secret'   => 'Weinbender',
-	        'consumer_key'          => 'HxcbslSL9BgAEeesnnSGg',
-	        'consumer_secret'       => 'Vf0BMSZZugyX8pBKW5lwiqEGWTKdqnNQjYfMB67xnw',
+	        'consumer_key'          => '',
+	        'consumer_secret'       => '',
         );
 
 		/* Get a new token */
