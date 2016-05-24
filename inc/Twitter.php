@@ -72,7 +72,7 @@ abstract class TwitterPlugin {
         // Hashtags
         $text = preg_replace(
         '/\s+#(\w+)/',
-        ' <a href="http://search.twitter.com/search?q=%23$1">#$1</a>',
+        ' <a href="http://twitter.com/search?q=%23$1">#$1</a>',
         $text);
 
         return $text;
